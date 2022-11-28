@@ -38,7 +38,7 @@ from ament_index_python import get_resource
 
 from python_qt_binding import loadUi
 from python_qt_binding.QtCore import QEvent, QLocale, Signal
-from python_qt_binding.QtGui import QDoubleValidator, QIntValidator
+from python_qt_binding.QtGui import QDoubleValidator, QIntValidator, QColorConstants
 from python_qt_binding.QtWidgets import QMenu, QWidget
 
 from rclpy.parameter import Parameter
@@ -103,11 +103,12 @@ class EditorWidget(QWidget):
 
         :type grid: QFormLayout
         """
-        self._paramname_label.setText(self.parameter.name)
+        nodes = self.parameter.name.split(".")
+        self._paramname_label.setText("    " * len(nodes) + nodes[-1] + ":")
         self._paramname_label.setMinimumWidth(100)
         grid.addRow(self._paramname_label, self)
-        self.setToolTip(self.descriptor.description)
-        self._paramname_label.setToolTip(self.descriptor.description)
+        self.setToolTip(self.parameter.name + ": " + self.descriptor.description)
+        self._paramname_label.setToolTip(self.parameter.name + ": " + self.descriptor.description)
         self._paramname_label.contextMenuEvent = self.contextMenuEvent
 
     def hide(self, grid):
@@ -148,6 +149,24 @@ class BooleanEditor(EditorWidget):
     def update_local(self, value):
         super(BooleanEditor, self).update_local(value)
         self._update_signal.emit(value)
+
+
+class HeaderEditor(EditorWidget):
+    _update_signal = Signal(bool)
+
+    def __init__(self, *args, **kwargs):
+        super(HeaderEditor, self).__init__(*args, **kwargs)
+        ui_bool = os.path.join(
+            package_path, 'share', 'rqt_reconfigure', 'resource',
+            'editor_header.ui')
+        loadUi(ui_bool, self)
+
+        palette = self._paramname_label.palette()
+        palette.setColor(self._paramname_label.foregroundRole(), QColorConstants.Svg.dodgerblue)
+        self._paramname_label.setPalette(palette)
+
+        # Set inital value
+        # self._checkbox.setChecked(self.parameter.value)
 
 
 class StringEditor(EditorWidget):

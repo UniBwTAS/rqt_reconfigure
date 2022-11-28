@@ -10,6 +10,7 @@ setup(
         ('share/' + package_name + '/resource', [
             'resource/editor_bool.ui',
             'resource/editor_enum.ui',
+            'resource/editor_header.ui',
             'resource/editor_number.ui',
             'resource/editor_string.ui',
             'resource/node_selector.ui',

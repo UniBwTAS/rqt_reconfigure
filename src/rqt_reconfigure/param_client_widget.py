@@ -36,6 +36,7 @@ from python_qt_binding.QtWidgets import (QFileDialog, QFormLayout,
                                          QWidget)
 
 import rclpy
+from rcl_interfaces.msg import ParameterDescriptor
 
 from rqt_reconfigure import logging
 
@@ -49,7 +50,7 @@ from rqt_reconfigure.param_api import create_param_client
 from rqt_reconfigure.param_editors import (BooleanEditor,  # noqa: F401
                                            DoubleEditor, EDITOR_TYPES,
                                            EditorWidget, IntegerEditor,
-                                           StringEditor)
+                                           StringEditor, HeaderEditor)
 
 import yaml
 
@@ -139,7 +140,7 @@ class ParamClientWidget(QWidget):
         return self._node_grn
 
     def _handle_param_event(
-        self, new_parameters, changed_parameters, deleted_parameters
+            self, new_parameters, changed_parameters, deleted_parameters
     ):
         # TODO: Think about replacing callback architecture with signals.
         if new_parameters:
@@ -220,15 +221,31 @@ class ParamClientWidget(QWidget):
             self._editor_widgets[parameter.name].update_local(parameter.value)
 
     def add_editor_widgets(self, parameters, descriptors):
-        for parameter, descriptor in zip(parameters, descriptors):
+        prev_parameter_name = ""
+        for parameter, descriptor in sorted(zip(parameters, descriptors), key=lambda p: p[0].name):
             if parameter.type_ not in EDITOR_TYPES:
                 continue
             logging.debug('Adding editor widget for {}'.format(parameter.name))
             editor_widget = EDITOR_TYPES[parameter.type_](
                 self._param_client, parameter, descriptor
             )
+            self.add_headers(prev_parameter_name, parameter.name)
             self._editor_widgets[parameter.name] = editor_widget
             editor_widget.display(self.grid)
+            prev_parameter_name = parameter.name
+
+    def add_headers(self, previous_parameter_name, current_parameter_name):
+        prev_parent_nodes = previous_parameter_name.split(".")[:-1]
+        cur_parent_nodes = current_parameter_name.split(".")[:-1]
+        same_prefix_ended = False
+        for i, cur_parent_node in enumerate(cur_parent_nodes):
+            if i >= len(prev_parent_nodes) or prev_parent_nodes[i] != cur_parent_node:
+                same_prefix_ended = True
+            if same_prefix_ended:
+                dummy_parameter = rclpy.parameter.Parameter('.'.join(cur_parent_nodes[:i + 1]))
+                dummy_descriptor = ParameterDescriptor(description="")
+                header_widget = HeaderEditor(self._param_client, dummy_parameter, dummy_descriptor)
+                header_widget.display(self.grid)
 
     def display(self, grid):
         grid.addRow(self)
