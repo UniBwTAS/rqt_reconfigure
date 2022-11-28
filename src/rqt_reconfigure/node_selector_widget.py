@@ -389,15 +389,16 @@ class NodeSelectorWidget(QWidget):
         stditem_currentnode = TreenodeQstdItem(self._context, grn_curr,
                                                TreenodeQstdItem.NODE_FULLPATH)
 
-        # item at the bottom is your most recent node.
-        row_index_parent = treenodeitem_parent.rowCount() - 1
-
-        # Obtain and instantiate prev node in the same depth.
+        # search if the node in the same depth already exists
         name_prev = ''
         stditem_prev = None
-        if treenodeitem_parent.child(row_index_parent):
-            stditem_prev = treenodeitem_parent.child(row_index_parent)
-            name_prev = stditem_prev.text()
+        for i in range(treenodeitem_parent.rowCount()):
+            stditem_cur = treenodeitem_parent.child(i)
+            name_cur = stditem_cur.text()
+            if name_cur == name_currentnode:
+                stditem_prev = stditem_cur
+                name_prev = name_cur
+                break
 
         stditem = None
         # If the name of both nodes is the same, current node instance is
